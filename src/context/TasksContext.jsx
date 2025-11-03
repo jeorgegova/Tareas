@@ -21,6 +21,7 @@ export const TasksProvider = ({ children }) => {
 
   const fetchTasks = async () => {
     try {
+      setLoading(true);
       const data = await TaskService.getAllTasks();
       setTasks(data);
     } catch (error) {
@@ -30,11 +31,11 @@ export const TasksProvider = ({ children }) => {
     }
   };
 
-  const addTask = async (task) => {
+  const addTask = async (taskData) => {
     try {
-      const newTask = await TaskService.createTask(task);
-      // Refresh tasks to get the latest data including notes
-      await fetchTasks();
+      const newTask = await TaskService.createTask(taskData);
+      // Añadir al inicio sin recargar todo
+      setTasks(prev => [newTask, ...prev]);
       return newTask;
     } catch (error) {
       console.error('Error adding task:', error);
@@ -65,13 +66,39 @@ export const TasksProvider = ({ children }) => {
     }
   };
 
+  // Marcar subtarea como completada
+  const toggleSubtask = async (taskId, subtaskId) => {
+    try {
+      const task = tasks.find(t => t.id === taskId);
+      const subtask = task.subtasks.find(s => s.id === subtaskId);
+      const newCompleted = !subtask.completed;
+
+      const updatedSubtask = await TaskService.toggleSubtask(subtaskId, newCompleted);
+
+      setTasks(prev => prev.map(t =>
+        t.id === taskId
+          ? {
+              ...t,
+              subtasks: t.subtasks.map(s =>
+                s.id === subtaskId ? updatedSubtask : s
+              )
+            }
+          : t
+      ));
+    } catch (error) {
+      console.error('Error toggling subtask:', error);
+      throw error;
+    }
+  };
+
   const value = {
     tasks,
     loading,
     addTask,
     updateTask,
     deleteTask,
-    fetchTasks
+    toggleSubtask, 
+    refresh: fetchTasks
   };
 
   return (

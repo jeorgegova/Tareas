@@ -1,169 +1,92 @@
+// services/TaskService.js
 import { supabase } from '../lib/supabaseClient';
 
 class TaskService {
   async getAllTasks() {
-    try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('tasks')
+      .select(`
+        *,
+        subtasks (
+          id,
+          content,
+          completed,
+          created_at
+        )
+      `)
+      .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-      throw error;
-    }
+    if (error) throw error;
+    return data.map(task => ({
+      ...task,
+      subtasks: task.subtasks || []
+    }));
   }
 
-  async getTaskById(id) {
-    try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('id', id)
-        .single();
+  async createTask({ subtasks, ...taskData }) {
+    console.log('subtasks createTask', subtasks);
+    const { data: task, error: taskError } = await supabase
+      .from('tasks')
+      .insert([taskData])
+      .select()
+      .single();
 
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error fetching task:', error);
-      throw error;
+    if (taskError) throw taskError;
+
+    if (subtasks && subtasks.length > 0) {
+      const subtasksData = subtasks.map(content => ({
+        task_id: task.id,
+        content,
+        completed: false
+      }));
+      await supabase.from('subtasks').insert(subtasksData);
     }
+
+    return { ...task, subtasks: subtasks || [] };
   }
 
-  async createTask(taskData) {
-    try {
-      const { notes, ...taskFields } = taskData;
+  async updateTask(id, { subtasks, ...taskData }) {
+    console.log('subtasks updateTask', subtasks);
+    const { data: task, error: taskError } = await supabase
+      .from('tasks')
+      .update(taskData)
+      .eq('id', id)
+      .select()
+      .single();
 
-      // Create the task first
-      const { data: task, error: taskError } = await supabase
-        .from('tasks')
-        .insert([taskFields])
-        .select();
+    if (taskError) throw taskError;
 
-      if (taskError) throw taskError;
-
-      // If notes are provided, create them
-      if (notes && notes.length > 0) {
-        const notesData = notes.map(note => ({
-          task_id: task[0].id,
-          content: note
-        }));
-
-        const { error: notesError } = await supabase
-          .from('notes')
-          .insert(notesData);
-
-        if (notesError) throw notesError;
-      }
-
-      return task[0];
-    } catch (error) {
-      console.error('Error creating task:', error);
-      throw error;
+    // Reemplazar subtareas
+    await supabase.from('subtasks').delete().eq('task_id', id);
+    if (subtasks && subtasks.length > 0) {
+      const subtasksData = subtasks.map(content => ({
+        task_id: id,
+        content: content.content,
+        completed: false
+      }));
+      await supabase.from('subtasks').insert(subtasksData);
     }
+
+    return { ...task, subtasks: subtasks || [] };
   }
 
-  async getTaskWithNotes(id) {
-    try {
-      // Get task
-      const { data: task, error: taskError } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('id', id)
-        .single();
+  // NUEVO: Marcar subtarea como completada
+  async toggleSubtask(subtaskId, completed) {
+    const { data, error } = await supabase
+      .from('subtasks')
+      .update({ completed })
+      .eq('id', subtaskId)
+      .select()
+      .single();
 
-      if (taskError) throw taskError;
-
-      // Get notes for the task
-      const { data: notes, error: notesError } = await supabase
-        .from('notes')
-        .select('*')
-        .eq('task_id', id)
-        .order('created_at', { ascending: true });
-
-      if (notesError) throw notesError;
-
-      return {
-        ...task,
-        notes: notes || []
-      };
-    } catch (error) {
-      console.error('Error fetching task with notes:', error);
-      throw error;
-    }
-  }
-
-  async updateTaskWithNotes(id, taskData) {
-    try {
-      const { notes, ...taskFields } = taskData;
-
-      // Update the task
-      const { data: task, error: taskError } = await supabase
-        .from('tasks')
-        .update(taskFields)
-        .eq('id', id)
-        .select();
-
-      if (taskError) throw taskError;
-
-      // If notes are provided, replace existing notes
-      if (notes && notes.length > 0) {
-        // First delete existing notes
-        await supabase
-          .from('notes')
-          .delete()
-          .eq('task_id', id);
-
-        // Then insert new notes
-        const notesData = notes.map(note => ({
-          task_id: id,
-          content: note
-        }));
-
-        const { error: notesError } = await supabase
-          .from('notes')
-          .insert(notesData);
-
-        if (notesError) throw notesError;
-      }
-
-      return task[0];
-    } catch (error) {
-      console.error('Error updating task with notes:', error);
-      throw error;
-    }
-  }
-  async updateTask(id, updates) {
-    try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .update(updates)
-        .eq('id', id)
-        .select();
-
-      if (error) throw error;
-      return data[0];
-    } catch (error) {
-      console.error('Error updating task:', error);
-      throw error;
-    }
+    if (error) throw error;
+    return data;
   }
 
   async deleteTask(id) {
-    try {
-      const { error } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      console.error('Error deleting task:', error);
-      throw error;
-    }
+    const { error } = await supabase.from('tasks').delete().eq('id', id);
+    if (error) throw error;
+    return true;
   }
 }
 

@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTasks } from '../context/TasksContext.jsx';
-import { Plus, Trash2, Loader2, Clock, AlertCircle, CheckCircle, Search, Filter, Calendar } from 'lucide-react';
+import { Plus, Trash2, Loader2, Clock, AlertCircle, CheckCircle, Search, Filter, Calendar, Zap, RefreshCw } from 'lucide-react';
+import MotivationalWidget from '../components/MotivationalWidget.jsx';
 
 // === FORMATO DE FECHA ===
 const formatDate = (dateStr) => {
@@ -10,6 +11,7 @@ const formatDate = (dateStr) => {
   return `${day}/${month}/${year}`; // 04/11/2025
 };
 
+// === COMPONENTE HOME 
 const Home = () => {
   const { tasks, loading, deleteTask } = useTasks();
   const navigate = useNavigate();
@@ -26,7 +28,7 @@ const Home = () => {
 
   // Hoy
   const todayUTC = new Date();
-todayUTC.setUTCHours(0, 0, 0, 0);
+  todayUTC.setUTCHours(0, 0, 0, 0);
 
   // === FILTRADO ===
   const filteredTasks = useMemo(() => {
@@ -80,14 +82,14 @@ todayUTC.setUTCHours(0, 0, 0, 0);
 
   // === TAREA VENCIDA ===
   const isOverdue = (task) => {
-  if (!task.due_date || task.status === 'completed') return false;
+    if (!task.due_date || task.status === 'completed') return false;
 
-  // Convertir due_date (YYYY-MM-DD) a UTC medianoche
-  const [year, month, day] = task.due_date.split('-').map(Number);
-  const dueDateUTC = new Date(Date.UTC(year, month - 1, day)); // UTC
+    // Convertir due_date (YYYY-MM-DD) a UTC medianoche
+    const [year, month, day] = task.due_date.split('-').map(Number);
+    const dueDateUTC = new Date(Date.UTC(year, month - 1, day)); // UTC
 
-  return dueDateUTC < todayUTC;
-};
+    return dueDateUTC < todayUTC;
+  };
 
   if (loading) {
     return (
@@ -109,6 +111,9 @@ todayUTC.setUTCHours(0, 0, 0, 0);
           <Clock className="w-10 h-10 text-blue-600" />
           Mis Tareas
         </h1>
+
+        {/* WIDGET DE API CON MANEJO DE ERRORES */}
+        <MotivationalWidget />
 
         {/* STATS EN LÍNEA */}
         <div className="flex justify-center gap-12 mb-8 text-center">
@@ -256,14 +261,13 @@ todayUTC.setUTCHours(0, 0, 0, 0);
                             <Calendar className="w-3.5 h-3.5" />
                             {formatDate(task.due_date)}
                           </span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            task.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${task.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                             task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                            'bg-green-100 text-green-800'
-                          }`}>
+                              'bg-green-100 text-green-800'
+                            }`}>
                             {task.status === 'pending' ? 'Pendiente' :
-                             task.status === 'in_progress' ? 'En Progreso' :
-                             'Completada'}
+                              task.status === 'in_progress' ? 'En Progreso' :
+                                'Completada'}
                           </span>
                         </div>
 
@@ -307,11 +311,10 @@ todayUTC.setUTCHours(0, 0, 0, 0);
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                    currentPage === 1
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                    }`}
                 >
                   Anterior
                 </button>
@@ -321,11 +324,10 @@ todayUTC.setUTCHours(0, 0, 0, 0);
                     <button
                       key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`w-8 h-8 rounded-lg text-sm font-medium transition ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                      }`}
+                      className={`w-8 h-8 rounded-lg text-sm font-medium transition ${currentPage === page
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                        }`}
                     >
                       {page}
                     </button>
@@ -335,11 +337,10 @@ todayUTC.setUTCHours(0, 0, 0, 0);
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                    currentPage === totalPages
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                    }`}
                 >
                   Siguiente
                 </button>

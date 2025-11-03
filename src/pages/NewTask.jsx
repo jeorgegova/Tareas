@@ -9,7 +9,7 @@ const NewTask = () => {
     description: '',
     dueDate: '',
     status: 'pending',
-    subtasks: [''] // ← Cambiado de notes a subtasks
+    subtasks: [{ content: '', completed: false }] // ← ¡Objetos!
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -26,13 +26,16 @@ const NewTask = () => {
 
   const handleSubtaskChange = (index, value) => {
     const newSubtasks = [...formData.subtasks];
-    newSubtasks[index] = value;
+    newSubtasks[index] = { ...newSubtasks[index], content: value };
     setFormData(prev => ({ ...prev, subtasks: newSubtasks }));
     clearError('subtasks');
   };
 
   const addSubtask = () => {
-    setFormData(prev => ({ ...prev, subtasks: [...prev.subtasks, ''] }));
+    setFormData(prev => ({
+      ...prev,
+      subtasks: [...prev.subtasks, { content: '', completed: false }]
+    }));
   };
 
   const removeSubtask = (index) => {
@@ -57,7 +60,7 @@ const NewTask = () => {
     if (!formData.description.trim()) newErrors.description = 'La descripción es obligatoria';
     if (!formData.dueDate) newErrors.dueDate = 'La fecha es obligatoria';
 
-    const validSubtasks = formData.subtasks.filter(s => s.trim());
+    const validSubtasks = formData.subtasks.filter(s => s.content.trim());
     if (validSubtasks.length === 0) {
       newErrors.subtasks = 'Agrega al menos una subtarea';
     }
@@ -77,15 +80,17 @@ const NewTask = () => {
         description: formData.description.trim(),
         due_date: formData.dueDate,
         status: formData.status,
-        subtasks: formData.subtasks.filter(s => s.trim()) // ← Enviar como subtasks
+        subtasks: formData.subtasks
+          .filter(s => s.content.trim())
+          .map(s => ({ content: s.content.trim(), completed: false })) // ← Objetos correctos
       };
 
       await addTask(taskData);
       setSuccess(true);
-      setTimeout(() => navigate('/'), 1200);
+      setTimeout(() => navigate('/'), 1000);
     } catch (error) {
-      console.error('Error:', error);
-      setErrors({ submit: 'No se pudo crear la tarea' });
+      console.error('Error creando tarea:', error);
+      setErrors({ submit: 'No se pudo crear la tarea. Inténtalo de nuevo.' });
     } finally {
       setSubmitting(false);
     }
@@ -218,7 +223,7 @@ const NewTask = () => {
                   </span>
                   <input
                     type="text"
-                    value={subtask}
+                    value={subtask.content}
                     onChange={(e) => handleSubtaskChange(index, e.target.value)}
                     placeholder="Ej: Investigar tema principal"
                     className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition ${errors.subtasks ? 'border-red-500' : 'border-gray-300'

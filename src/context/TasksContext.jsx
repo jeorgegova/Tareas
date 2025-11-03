@@ -66,6 +66,35 @@ export const TasksProvider = ({ children }) => {
     }
   };
 
+  const addNote = async (taskId, content) => {
+    try {
+      const newNote = await TaskService.addNote(taskId, content);
+      setTasks(prev => prev.map(task =>
+        task.id === taskId
+          ? { ...task, notes: [...task.notes, newNote] }
+          : task
+      ));
+      return newNote;
+    } catch (error) {
+      console.error('Error adding note:', error);
+      throw error;
+    }
+  };
+
+  const deleteNote = async (noteId, taskId) => {
+    try {
+      await TaskService.deleteNote(noteId);
+      setTasks(prev => prev.map(task =>
+        task.id === taskId
+          ? { ...task, notes: task.notes.filter(n => n.id !== noteId) }
+          : task
+      ));
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      throw error;
+    }
+  };
+
   // Marcar subtarea como completada
   const toggleSubtask = async (taskId, subtaskId) => {
     try {
@@ -78,11 +107,11 @@ export const TasksProvider = ({ children }) => {
       setTasks(prev => prev.map(t =>
         t.id === taskId
           ? {
-              ...t,
-              subtasks: t.subtasks.map(s =>
-                s.id === subtaskId ? updatedSubtask : s
-              )
-            }
+            ...t,
+            subtasks: t.subtasks.map(s =>
+              s.id === subtaskId ? updatedSubtask : s
+            )
+          }
           : t
       ));
     } catch (error) {
@@ -97,7 +126,9 @@ export const TasksProvider = ({ children }) => {
     addTask,
     updateTask,
     deleteTask,
-    toggleSubtask, 
+    toggleSubtask,
+    addNote,
+    deleteNote,
     refresh: fetchTasks
   };
 

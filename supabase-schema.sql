@@ -1,49 +1,109 @@
--- Create tasks table
-CREATE TABLE tasks (
-  id SERIAL PRIMARY KEY,
-  title TEXT NOT NULL,
-  description TEXT,
-  due_date DATE,
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- Habilitar UUID
+create extension if not exists "uuid-ossp";
+
+-- Tabla: tasks
+create table tasks (
+  id uuid default uuid_generate_v4() primary key,
+  title text not null,
+  description text,
+  status text default 'pending' check (status in ('pending', 'in_progress', 'completed')),
+  priority text default 'medium' check (priority in ('low', 'medium', 'high')),
+  due_date timestamp with time zone,
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
 );
 
--- Create notes table
+-- Tabla: notes
+create table subtasks (
+  id uuid default uuid_generate_v4() primary key,
+  task_id uuid references tasks(id) on delete cascade,
+  content text not null,
+  completed boolean default false,
+  created_at timestamp with time zone default now()
+);
+
+-- Índice para mejor rendimiento
+create index if not exists idx_subtasks_task_id on subtasks(task_id);
+
 CREATE TABLE notes (
-  id SERIAL PRIMARY KEY,
-  task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  task_id UUID REFERENCES tasks(id) ON DELETE CASCADE,
   content TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create indexes for better performance
-CREATE INDEX idx_tasks_status ON tasks(status);
-CREATE INDEX idx_tasks_due_date ON tasks(due_date);
+-- Índice para mejor rendimiento
 CREATE INDEX idx_notes_task_id ON notes(task_id);
 
--- Enable Row Level Security (RLS)
-ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+-- Trigger: actualizar updated_at
+create or replace function update_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
 
--- Create policies for tasks (allow all operations for authenticated users)
-CREATE POLICY "Enable all operations for authenticated users on tasks" ON tasks
-  FOR ALL USING (auth.role() = 'authenticated');
+create trigger trigger_update_tasks
+  before update on tasks
+  for each row
+  execute function update_updated_at();
 
--- Create policies for notes (allow all operations for authenticated users)
-CREATE POLICY "Enable all operations for authenticated users on notes" ON notes
-  FOR ALL USING (auth.role() = 'authenticated');
 
--- Create function to update updated_at timestamp
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ language 'plpgsql';
+-- Policys
+-- Permitir leer a cualquiera
+CREATE POLICY "Public SELECT on tasks"
+  ON tasks
+  FOR SELECT
+  TO public, anon
+  USING (true);
 
--- Create trigger to automatically update updated_at
-CREATE TRIGGER update_tasks_updated_at
-  BEFORE UPDATE ON tasks
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Permitir insertar a cualquiera
+CREATE POLICY "Public INSERT on tasks"
+  ON tasks
+  FOR INSERT
+  TO public, anon
+  WITH CHECK (true);
+
+-- Permitir actualizar a cualquiera
+CREATE POLICY "Public UPDATE on tasks"
+  ON tasks
+  FOR UPDATE
+  TO public, anon
+  USING (true);
+
+-- Permitir eliminar a cualquiera
+CREATE POLICY "Public DELETE on tasks"
+  ON tasks
+  FOR DELETE
+  TO public, anon
+  USING (true);
+
+
+-- Permitir leer a cualquiera
+CREATE POLICY "Public SELECT on subtasks"
+  ON subtasks
+  FOR SELECT
+  TO public, anon
+  USING (true);
+
+-- Permitir insertar a cualquiera
+CREATE POLICY "Public INSERT on subtasks"
+  ON subtasks
+  FOR INSERT
+  TO public, anon
+  WITH CHECK (true);
+
+-- Permitir actualizar a cualquiera
+CREATE POLICY "Public UPDATE on subtasks"
+  ON subtasks
+  FOR UPDATE
+  TO public, anon
+  USING (true);
+
+-- Permitir eliminar a cualquiera
+CREATE POLICY "Public DELETE on subtasks"
+  ON subtasks
+  FOR DELETE
+  TO public, anon
+  USING (true);

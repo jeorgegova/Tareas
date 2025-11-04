@@ -1,16 +1,90 @@
-# React + Vite
+# Tareas GoGi - Aplicación de Gestión de Tareas
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Una aplicación moderna de gestión de tareas construida con React, Vite y Supabase. Incluye una interfaz limpia con Tailwind CSS, actualizaciones en tiempo real y un widget motivacional.
 
-Currently, two official plugins are available:
+## Prerrequisitos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Node.js versión 20 o superior
+- Administrador de paquetes npm o yarn
 
-## React Compiler
+## Instalación
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. Clona el repositorio:
+   ```bash
+   git clone <url-del-repositorio>
+   cd tereas
+   ```
 
-## Expanding the ESLint configuration
+2. Instala las dependencias:
+   ```bash
+   npm install
+   ```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+3. Crea un archivo `.env` en el directorio raíz y agrega tu configuración de Supabase:
+   ```env
+   VITE_SUPABASE_URL=tu_url_de_supabase
+   VITE_SUPABASE_ANON_KEY=tu_clave_anonima_de_supabase
+   ```
+
+4. Inicia el servidor de desarrollo:
+   ```bash
+   npm run dev
+   ```
+
+5. Abre tu navegador y navega a `http://localhost:5173`
+
+## Scripts Disponibles
+
+- `npm run dev` - Inicia el servidor de desarrollo con recarga en caliente
+- `npm run build` - Construye el proyecto para producción
+- `npm run preview` - Previsualiza la construcción de producción localmente
+- `npm run lint` - Ejecuta ESLint para verificar problemas en el código
+
+## Características
+
+- Crear, leer, actualizar y eliminar tareas
+- Filtrado de tareas por estado y rango de fechas
+- Funcionalidad de búsqueda
+- Panel de estadísticas de tareas
+- Widget de frases motivadoras con manejo de errores
+- Diseño responsivo
+- Actualizaciones en tiempo real con Supabase
+- Interfaz moderna con Tailwind CSS
+
+## Estructura del Proyecto
+
+```
+src/
+├── components/          # Componentes reutilizables
+│   └── MotivationalWidget.jsx
+├── context/            # Proveedores de contexto de React
+│   └── TasksContext.jsx
+├── pages/              # Componentes de página
+│   ├── Home.jsx
+│   ├── NewTask.jsx
+│   └── TaskDetail.jsx
+├── services/           # Servicios de API
+│   └── TaskService.js
+├── lib/                # Librerías de utilidades
+│   └── supabaseClient.js
+└── assets/             # Recursos estáticos
+```
+
+## Tecnologías Utilizadas
+
+- **Frontend**: React 19, React Router DOM
+- **Herramienta de Construcción**: Vite
+- **Estilos**: Tailwind CSS
+- **Iconos**: Lucide React
+- **Backend**: Supabase
+- **Linting**: ESLint
+
+## Contribuyendo
+
+1. Haz un fork del repositorio
+2. Crea una rama de características (`git checkout -b feature/caracteristica-increible`)
+3. Confirma tus cambios (`git commit -m 'Agrega una característica increíble'`)
+4. Sube a la rama (`git push origin feature/caracteristica-increible`)
+5. Abre un Pull Request
+
+
